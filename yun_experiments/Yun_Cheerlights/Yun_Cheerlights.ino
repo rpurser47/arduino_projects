@@ -11,26 +11,37 @@ int pinRed = 9;
 int pinGreen = 6;
 int pinBlue = 5;
 
+// Assume that the serial connection is not available
+bool serialEnabled = false;
+
 void setup()
 {
-  Bridge.begin();
-  Serial.begin(9600);
-
-
   pinMode(pinRed,OUTPUT);
   pinMode(pinGreen,OUTPUT);
   pinMode(pinBlue,OUTPUT);
 
-  // Power on self test
+  // Provide a indicator that the bridge connection is being set up
   setColor("red");
-  delay(500);
-  setColor("green");
-  delay(500);
+  Bridge.begin();
+  Serial.begin(9600);
+
+  // Provide indicator for serial connection set up
+  setColor("yellow");
+
+  // wait up to 5 seconds for the serial interface to start
+  long waitStartedAt = millis();
+  while(waitStartedAt + 5000 > millis() && !serialEnabled)
+  {
+    if(Serial)
+    {
+      serialEnabled = true;
+    }
+  } 
+  // Complete power on self test
   setColor("blue");
   delay(500);
   setColor("none");
 
-  while(!Serial); // wait for a serial connection 
 }
 
 void loop()
@@ -47,24 +58,32 @@ void loop()
   while (client.available())
   {
     char c = client.read();
-    Serial.print(c);
+    if(serialEnabled)
+    {
+      Serial.print(c);
+    }
     colorCommand[iColor] = c;
     iColor++;
     if(iColor >= 19)  // remember that C is 0 based, so 19 is the 20th character in the array
     {
       // The text is more than just a color (like an error message) -- stop reading and flush.
-      Serial.println();
-      Serial.println("Got more text than expected -- abandon attempt");
+      if(serialEnabled)
+      {
+        Serial.println();
+        Serial.println("Got more text than expected -- abandon attempt");
+      }
       delay(1000);
       return;
     }
     colorCommand[iColor] = 0;
   }
-  Serial.println();
-  Serial.flush();
-
-  Serial.print("Color was: ");  
-  Serial.println(colorCommand);
+  if(serialEnabled)
+  {
+    Serial.println();
+    Serial.flush();
+    Serial.print("Color was: ");  
+    Serial.println(colorCommand);
+  }
   setColor(colorCommand);
 
   delay(5000);
@@ -93,27 +112,47 @@ void setColor(String color)
   {
     if(color == colorName[iColor])
     {
-      Serial.print("Current Color is: "); 
-      Serial.println(colorName[iColor]);
+      if(serialEnabled)
+      {
+        Serial.print("Current Color is: "); 
+        Serial.println(colorName[iColor]);
+      }
       setRGB(colorRGB[iColor][0], colorRGB[iColor][1], colorRGB[iColor][2]);
       return;
     }
   }
-  Serial.print("Could not match color: "); 
-  Serial.println(color);
+  if(serialEnabled)
+  {
+    Serial.print("Could not match color: "); 
+    Serial.println(color);
+  }
 }
+
+int previousRed = 0;
+int previousGreen = 0;
+int previousBlue = 0;
 
 void setRGB(int redValue, int greenValue, int blueValue)
 {
-  Serial.print("Setting to: ");
-  Serial.print(redValue);
-  Serial.print(" , ");
-  Serial.print(greenValue);
-  Serial.print(" , ");
-  Serial.println(blueValue);
-  analogWrite(pinRed,redValue);
-  analogWrite(pinGreen,greenValue);
-  analogWrite(pinBlue,blueValue);
+  if(serialEnabled)
+  {
+    Serial.print("Fading to: ");
+    Serial.print(redValue);
+    Serial.print(" , ");
+    Serial.print(greenValue);
+    Serial.print(" , ");
+    Serial.println(blueValue);
+  }
+  for(float iLevel=0; iLevel<1; iLevel += 0.01)
+  {
+    analogWrite(pinRed,int(redValue * iLevel + previousRed * (1.0 - iLevel)));
+    analogWrite(pinGreen,int(greenValue * iLevel + previousGreen * (1.0 - iLevel)));
+    analogWrite(pinBlue,int(blueValue * iLevel + previousBlue * (1.0 - iLevel)));
+    delay(20);
+  }
+  previousRed = redValue;
+  previousGreen = greenValue;
+  previousBlue = blueValue;
 }
 
 
