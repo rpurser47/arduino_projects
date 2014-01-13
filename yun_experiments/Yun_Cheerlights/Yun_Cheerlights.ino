@@ -32,7 +32,11 @@ void setup()
   long waitStartedAt = millis();
   while(waitStartedAt + 5000 > millis() && !serialEnabled)
   {
-    if(Serial)
+    if(!Serial)
+    {
+      serialEnabled = false;
+    }
+    else
     {
       serialEnabled = true;
     }
