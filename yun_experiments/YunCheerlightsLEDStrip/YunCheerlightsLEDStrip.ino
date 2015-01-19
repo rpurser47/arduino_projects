@@ -54,6 +54,8 @@ void setup()
   delay(500);
   setColor("purple");
   delay(500);
+  setColor("pink");
+  delay(500);
   setColor("magenta");
   delay(500);
   setColor("white");
@@ -109,8 +111,9 @@ void loop()
 }
 
 
+unsigned char numColors = 12;
 String colorName[] = {
-  "none","red","green","blue","cyan","white","warmwhite","oldlace","purple","magenta","yellow","orange"};
+  "none","red","green","blue","cyan","white","warmwhite","oldlace","purple","magenta","pink","yellow","orange"};
 int colorRGB[][3] = {  
     0,  0,  0, // "none"
   255,  0,  0, // "red"
@@ -122,6 +125,7 @@ int colorRGB[][3] = {
   255,231,154, // "oldlace",
   103,  0,154, // "purple",
   255,  0,255, // "magenta",
+  255,192,203, // "pink",
   255,255,  0, // "yellow",
   255,128,  0}; // "orange"};  
 
@@ -136,13 +140,14 @@ int colorHSB[][3] = {
    39,  9, 99, // "oldlace",
   270,255,255, // "purple",
   300,255,255, // "magenta",
+  350,206,255, // "pink",
    60,255,255, // "yellow",
    30,255,255}; // "orange"};
 
 
 void setColor(String color)
 {
-  for(int iColor = 0; iColor <= 11; iColor++)
+  for(int iColor = 0; iColor <= numColors; iColor++)
   {
     if(color == colorName[iColor])
     {
@@ -151,7 +156,12 @@ void setColor(String color)
         Serial.print("Current Color is: "); 
         Serial.println(colorName[iColor]);
       }
-      setAllLEDsVaryingHue(colorHSB[iColor][0], 10, colorHSB[iColor][1], colorHSB[iColor][2]);
+      unsigned short hueVariation = 10;
+      if(colorHSB[iColor][0] > 345 || colorHSB[iColor][0] < 15)
+      {
+        hueVariation = 3;
+      }
+      setAllLEDsVaryingHue(colorHSB[iColor][0], hueVariation, colorHSB[iColor][1], colorHSB[iColor][2]);
       return;
     }
   }

@@ -100,7 +100,12 @@ void loop()
   }
   if(lastChangedAt + 1000 < millis() && brightnessSetting != 0)
   {
-    setAllLEDsVaryingHue(hueSetting,10,saturationSetting,brightnessSetting);
+    unsigned short hueVariation = 10;
+    if(hueSetting > 345 || hueSetting < 15)
+    {
+      hueVariation = 3;
+    }
+    setAllLEDsVaryingHue(hueSetting,hueVariation,saturationSetting,brightnessSetting);
     lastChangedAt = millis();
   }
 
